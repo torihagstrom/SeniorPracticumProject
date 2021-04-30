@@ -1,0 +1,3 @@
+# Downloading R/Rstudio 
+
+This is a working document for R based resources for intro R scholars. 

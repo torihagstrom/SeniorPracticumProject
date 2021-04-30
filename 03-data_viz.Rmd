@@ -1,0 +1,30 @@
+# Data Visualization
+
+
+## Data Visualization in Base R
+
+Basic R plots in base R such as hist() and plot()
+
+```{r}
+library(tidyverse)
+```
+
+```{r pressure, echo=FALSE}
+MN_Data <- read_csv("MN_county_tract_pooled.csv")
+plot(pressure)
+attach(MN_Data)
+hist(median_rent2016)
+plot(popdensity2010, nonwhite_share2010)
+```
+
+## ggplot Data Visualization
+
+the package ggplot has lots of extra plot code to create unique fun plots
+
+```{r}
+library(ggplot2)
+```
+
+
+
+

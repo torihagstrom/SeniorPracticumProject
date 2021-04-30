@@ -1,0 +1,203 @@
+# Data Wrangling
+
+---
+title: "data-wrangling"
+author: "Tori"
+date: "4/27/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Reading in data
+
+```{r}
+library(tidyverse)
+```
+
+The easiest way to read in data is to save your .csv file in the **same folder** as the R notebook where you are writing code. Download the MN census data set csv file (Named: MN_county_tract_pooled.csv) and save it in the same folder on your computer as this file. 
+
+This data set contains data from the MN Census. We can use the `readr` function `read_csv`.
+
+```{r}
+MN_Data <- read_csv("MN_county_tract_pooled.csv")
+```
+
+Finding the number of variables and cases...
+
+```{r}
+dim(MN_Data)
+```
+
+Finding the variable names...
+```{r}
+names(MN_Data)
+```
+
+## Select Function
+
+Using the *SELECT* function to create a much smaller data set with only the variables we are interested in. 
+
+For example, we want a data set with the following variables only: name, median_rent2016, foreign_share2016, traveltime15_2016, singleparent_share2016, and frac_coll_plus2016
+
+First lets discuss what %>% function means. This is called a pipe and is used to take the output of one statement and makes it the input of the next statement. When describing it, you can think of it as a "Then"
+
+The code below is creating a new subset data set named *MN_Data_sub*. First, it is taking the original data set, using the pipe function, and selecting the variables needed from the original dataset. 
+
+- **`select()`** chooses which columns to keep, or put another way, deletes those colummns that are not selected. To specify the columns, we can either list them out, or use functions like `starts_with()`, `ends_with()`, or `contains()` to specify the titles of the variables we wish to keep.
+
+```{r}
+#select specific columns
+MN_Data_sub <- MN_Data %>% 
+  select(name, median_rent2016, foreign_share2016, traveltime15_2016, singleparent_share2016, frac_coll_plus2016)
+
+#select the variables that start with single parent
+MN_Data_sub_singleparent <- MN_Data %>%
+  select(starts_with("singleparent"))
+
+#select the variables that ends with 2016
+MN_Data_sub_ends_with_2016 <- MN_Data %>%
+  select(ends_with("2016"))
+
+#selects the variables that contain 2016
+MN_Data_sub_2016 <- MN_Data %>%
+  select(contains("2016"))
+
+#selects all variables except those that contain 2016
+MN_Data_sub_eliminate <- MN_Data %>%
+  select(-contains("2016"))
+
+#selects the first 10 columns
+MN_Data_sub_first_ten <- MN_Data %>%
+  select(c(1:10))
+
+```
+
+
+Take a look at both MN_Data data set and MN_Data_sub data set to compare their differences...
+
+```{r}
+glimpse(MN_Data)
+```
+
+```{r}
+glimpse(MN_Data_sub)
+```
+
+## Mutate Function
+
+- **`mutate()`** adds one or more columns to the data frame. Each column is a function of the other columns that is applied on a row by row basis. For example, we can use arithmetic operations like adding two other variables or logical operations like checking if two columns are equal, or equal to a target number.
+
+Using the mpg data set, we can add city to highway ratio and the standard deviation of highway. Now mutated into the new subset data set, we can see there are two more variables added to the data set. 
+
+```{r}
+mpg_sub <- mpg %>% 
+  select(manufacturer, model, drv, hwy, cty) %>% 
+  mutate(
+    cty_hwy_ratio = cty/hwy,
+    std_hwy_mpg = (hwy - mean(hwy))/sd(hwy)) 
+view(mpg_sub)
+```
+
+## Filter function
+
+**`filter()`** deletes some of the rows by specifying which rows to keep.
+Filter by values of quantitative variable(<, >, =, !=, etc) 
+Filter by string values of categorical variables (==)
+
+
+```{r}
+#filters data when highway is greater than 20
+mpg %>%
+  filter(hwy>20)
+
+#filters when year is 1999
+#mpg %>%
+ # filter(year == 1999)
+
+#filters both hwy>20 and year is 1999
+#mpg %>%
+#  filter(hwy>20) & filter(year == 1999)
+
+#filter all cases with Ramsey county out of MN_Counties data
+
+MN_counties <- read_csv("MN_county_tract_pooled.csv")
+ramsey <- MN_counties %>% filter( grepl("27123", tract))
+
+```
+
+Here are some common operators used with filtering
+
+Operator  | Meaning
+----------|--------
+`==`      | Equal to
+`>`       | Greater than
+`<`       | Less than
+`>=`      | Greater than or equal to
+`<=`      | Less than or equal to
+`!=`      | Not equal to
+`%in%`    | in 
+`is.na`   | is a missing value (NA)
+`!is.na`  | is not a missing value
+`&`       | and
+`|`       | or
+
+## Arrange Function
+
+**`arrange()`** reorders the rows according to a specified criteria. To sort in reverse order based on the variable `x`, use `arrange(desc(x))`.
+
+```{r}
+#re order the rows for mpg where highway is in descending order
+mpg %>%
+  arrange(desc(hwy)) %>%
+  head(10)
+#re order the rows for MN_Data where median rent in 2016 is in descending order
+MN_Data %>%
+  arrange(desc(median_rent2016))
+
+#save top 10 data values in data set
+top_10 <- head(mpg,10)
+bottom_10 <- tail(mpg,10)
+```
+
+## Summarize Function
+
+**`summarize()`** (or equivalently **`summarise()`**) takes an entire data frame as input and outputs a single row with one or more summary statistics, such as `mean`, `sum`, `sd`, `n_distinct()`, or `n()` (which, just counts the number of entries). 
+
+```{r}
+
+#We want to find the average number of cylinders, total number of cases, and the number of unique manufacturers.
+
+mpg %>%
+  summarize(average_cyl = mean(cyl),
+            ncases = n(),
+            nmanufacturer = n_distinct(manufacturer))
+
+```
+
+So `summarize` changes both the cases and the variables. Alone, `summarize` is not all that useful. We will mostly use it to create **grouped summaries**, which brings us to the last of the six main data verbs.
+## Group by function
+
+- **`group_by()`** groups the cases of a data frame by a specified set of variables. The size of the stored data frame does not actually change (neither the cases nor the variables change), but then other functions can be applied to the specified groups instead of the entire data set. We'll often use `group_by()` in conjunction with `summarize()` to get a grouped summary. Whatever function is applied after the `group_by()` will be performed on each level or combination of levels of the variable(s). The `ungroup()` function ungroups the data.
+
+```{r, eval=FALSE}
+#Finding summary statistics of mean highway mpg and best highway mpg by separating them by drv.
+
+mpg %>%
+  group_by(drv) %>% 
+  summarize(mean_hwy_mpg = mean(hwy),
+            best_hwy_mpg = max(hwy))
+
+#nested ungroup example
+
+mpg %>%
+  group_by(drv) %>% 
+  summarize(mean_hwy_mpg = mean(hwy),
+            best_hwy_mpg = max(hwy)) %>%
+  ungroup() %>%
+  group_by(year)
+
+```
+
